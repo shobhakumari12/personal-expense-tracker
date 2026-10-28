@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Expense Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="layout">
+
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <span class="sidebar-logo">₹</span>
+                <span>ExpenseFlow</span>
+            </div>
+
+            <p class="sidebar-section-label">WORKSPACE</p>
+
+            <a href="{{ url_for('home') }}" class="sidebar-link active">
+                <span>▦</span> Dashboard
+            </a>
+
+            <a href="#transactions" class="sidebar-link">
+                <span>↔</span> Transactions
+            </a>
+
+            <a href="{{ url_for('reports') }}" class="sidebar-link">
+                <span>▤</span> Reports
+            </a>
+
+            <div class="sidebar-footer">
+                <span class="sidebar-footer-icon">₹</span>
+                <div>
+                    <strong>Personal Finance</strong>
+                    <small>Money management</small>
+                </div>
+            </div>
+        </aside>
+
+
+        <main class="content">
+
+            <header class="dashboard-header">
+                <div class="header-content">
+                    <div class="brand-mark">₹</div>
+                    <div>
+                        <h1>Personal Finance</h1>
+                        <p>Track your income, manage expenses, and grow your savings.</p>
+                    </div>
+                </div>
+
+                <div class="header-date">
+                    <span class="date-label">TODAY</span>
+                    <strong>{{ today }}</strong>
+                </div>
+            </header>
+
+
+
+            <section class="cards">
+                <article class="card income">
+                    <p>Total Income</p>
+                    <h2>₹{{ "%.2f"|format(income) }}</h2>
+                    <span>Money received</span>
+                </article>
+
+                <article class="card expense">
+                    <p>Total Expenses</p>
+                    <h2>₹{{ "%.2f"|format(expenses) }}</h2>
+                    <span>Money spent</span>
+                </article>
+
+                <article class="card balance">
+                    <p>Current Balance</p>
+                    <h2>₹{{ "%.2f"|format(balance) }}</h2>
+                    <span>Income minus expenses</span>
+                </article>
+            </section>
+
+            <section class="panel">
+                <h2>Add Transaction</h2>
+
+                <form action="{{ url_for('add_transaction') }}" method="POST" class="transaction-form">
+
+                    <label>
+                        Description
+                        <input type="text" name="title" placeholder="e.g. Monthly salary" required>
+                    </label>
+
+                    <label>
+                        Amount (₹)
+                        <input type="number" name="amount" min="0.01" step="0.01" required>
+                    </label>
+
+                    <label>
+                        Type
+                        <select name="transaction_type" required>
+                            <option value="expense">Expense</option>
+                            <option value="income">Income</option>
+                        </select>
+                    </label>
+
+                    <label>
+                        Category
+                        <select name="category" required>
+                            <option value="Food">Food</option>
+                            <option value="Travel">Travel</option>
+                            <option value="Education">Education</option>
+                            <option value="Shopping">Shopping</option>
+                            <option value="Salary">Salary</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </label>
+
+                    <label>
+                        Date
+                        <input type="date" name="transaction_date" id="transaction_date" required>
+                    </label>
+
+                    <button type="submit">Add Transaction</button>
+                </form>
+            </section>
+
+
+            <section class="panel" id="transactions">
+                <h2>Recent Transactions</h2>
+
+                <form method="GET" action="{{ url_for('home') }}" class="transaction-form">
+
+                    <label>
+                        Search description
+                        <input type="text" name="search" value="{{ search }}" placeholder="Search transactions">
+                    </label>
+
+                    <label>
+                        Transaction type
+                        <select name="type">
+                            <option value="">All types</option>
+                            <option value="income" {% if selected_type=='income' %}selected{% endif %}>
+                                Income
+                            </option>
+                            <option value="expense" {% if selected_type=='expense' %}selected{% endif %}>
+                                Expense
+                            </option>
+                        </select>
+                    </label>
+
+                    <label>
+                        Category
+                        <select name="category">
+                            <option value="">All categories</option>
+                            {% for item in categories %}
+                            <option value="{{ item.category }}" {% if selected_category==item.category %}selected{%
+                                endif %}>
+                                {{ item.category }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label>
+                        From date
+                        <input type="date" name="start_date" value="{{ start_date }}">
+                    </label>
+
+                    <label>
+                        To date
+                        <input type="date" name="end_date" value="{{ end_date }}">
+                    </label>
+
+                    <button type="submit">Apply Filters</button>
+                    <a href="{{ url_for('home') }}">Clear Filters</a>
+                </form>
+
+
+                {% if transactions %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th>Category</th>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Amount</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in transactions %}
+                            <tr>
+                                <td>{{ item.title }}</td>
+                                <td>{{ item.category }}</td>
+                                <td>{{ item.transaction_date }}</td>
+                                <td>{{ item.transaction_type|title }}</td>
+                                <td class="{{ item.transaction_type }}">
+                                    {% if item.transaction_type == 'income' %}+{% else %}-{% endif %}
+                                    ₹{{ "%.2f"|format(item.amount) }}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('edit_transaction', transaction_id=item.id) }}">
+                                        Edit
+                                    </a>
+
+                                    <form action="{{ url_for('delete_transaction', transaction_id=item.id) }}"
+                                        method="POST" style="display:inline"
+                                        onsubmit="return confirm('Delete this transaction?');">
+                                        <button type="submit">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="muted">No transactions yet. Add your first transaction above.</p>
+                {% endif %}
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        document.getElementById("transaction_date").value =
+            new Date().toLocaleDateString("en-CA");
+    </script>
+</body>
+
+</html>

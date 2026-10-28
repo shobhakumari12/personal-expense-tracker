@@ -1,0 +1,104 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Reports</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <main class="content">
+        <h1>Expense Reports</h1>
+        <p class="muted">Analyze your income and spending.</p>
+
+        <section class="panel">
+            <h2>Filter by Month</h2>
+
+            <form method="GET" action="{{ url_for('reports') }}"
+                  class="transaction-form">
+                <label>
+                    Select Month
+                    <select name="month">
+                        <option value="">All time</option>
+                        {% for item in available_months %}
+                        <option value="{{ item.month }}"
+                            {% if selected_month == item.month %}selected{% endif %}>
+                            {{ item.month }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </label>
+
+                <button type="submit">Apply Filter</button>
+            </form>
+        </section>
+
+        <section class="cards">
+            <article class="card income">
+                <p>Total Income</p>
+                <h2>₹{{ "%.2f"|format(income) }}</h2>
+            </article>
+
+            <article class="card expense">
+                <p>Total Expenses</p>
+                <h2>₹{{ "%.2f"|format(expenses) }}</h2>
+            </article>
+
+            <article class="card balance">
+                <p>Balance</p>
+                <h2>₹{{ "%.2f"|format(balance) }}</h2>
+            </article>
+        </section>
+
+        <section class="panel">
+            <h2>Expenses by Category</h2>
+
+            {% if category_rows %}
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Total Spent</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in category_rows %}
+                        <tr>
+                            <td>{{ item.category }}</td>
+                            <td>₹{{ "%.2f"|format(item.total) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="muted">No expenses recorded for this period.</p>
+            {% endif %}
+
+            <img
+                src="{{ url_for('static', filename='category_chart.png') }}?v={{ selected_month }}"
+                alt="Expenses by category chart"
+                style="max-width:100%; height:auto;">
+        </section>
+
+        <section class="panel">
+            <h2>Monthly Income vs Expenses</h2>
+            <img
+                src="{{ url_for('static', filename='monthly_chart.png') }}"
+                alt="Monthly income and expenses chart"
+                style="max-width:100%; height:auto;">
+        </section>
+
+        <p>
+            <a href="{{ url_for('home') }}">Back to Dashboard</a>
+            |
+            <a href="{{ url_for('export_csv', month=selected_month) }}">
+                Download CSV Report
+            </a>
+        </p>
+    </main>
+</body>
+</html>
